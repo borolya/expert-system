@@ -16,8 +16,6 @@ if args.file_name == None and args.input != True:
     #print args help
     print("add file or choose input format")
     exit()
-
-
 if (args.file_name != None):
     try:
         fd = open(args.file_name)
@@ -28,8 +26,13 @@ else:
 
 data = pr.get_data(fd)
 print (data)
+rpn_rules = []
 for rule in data["rules"]:
-    print(rev_pn.rpn(rule))
+    rpn_rule = rev_pn.rpn(rule)
+    print(rpn_rule)
+    rpn_rules.append(rpn_rule)
+data["rpn_rules"] = rpn_rules
+print(data)
 fd.close()
 
 

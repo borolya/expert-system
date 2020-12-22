@@ -81,4 +81,3 @@ def get_data(fd):
         if len(data[d]) == 0:
             exit("There is no information about " + d)
     return data
-#    sys.exit(e)
