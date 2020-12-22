@@ -3,6 +3,7 @@
 import argparse
 import parser as pr
 import sys
+import reverse_polish_notation as rev_pn
 
 
 arg_pr = argparse.ArgumentParser(description=' ', add_help=True, conflict_handler='resolve')
@@ -27,10 +28,8 @@ else:
 
 data = pr.get_data(fd)
 print (data)
-
-#check trivial cases 
-
-
+for rule in data["rules"]:
+    print(rev_pn.rpn(rule))
 fd.close()
 
 
