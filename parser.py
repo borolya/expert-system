@@ -1,27 +1,19 @@
 import re
 import sys
-#def preparing_string(fd):
 
-
-
-
-def checking_rule(line):
+def get_rule(line):
     origin_binar_operation = ['+', '^', '|', '=>', '<=', '<=>']
-    print(line)
-
     if line[0] == '=' or len(re.findall(r'\?', line)) != 0:
-        return #?null?
+        return None, None
     if len(re.findall(r'![^A-Z\(]', line)) != 0:
-        exit("bad using '!' in line " + line)
-    real_binar_operation = re.split(r'(?:!?\(*!?)*[A-Z]\)*', line)
+        exit("bad using '!' in line \n\t" + line)
+    real_binar_operation = re.split(r'[!\()]*[A-Z]\)*', line)
     if real_binar_operation[0] != '' or real_binar_operation[-1] != '':
-        exit("incorrect binar operation in line " + line)
+        exit("incorrect binar operation in line \n\t" + line)
     real_binar_operation.pop(0)
     real_binar_operation.pop(-1)
-    #print(re.findall(r'(?:!?\(*!?)*[A-Z]\)*', line))
-    #print(real_binar_operation)
     if not set(real_binar_operation) <= set(origin_binar_operation):
-        exit("incorrect binar operation in line " + line)
+        exit("incorrect binar operation in line \n\t" + line)
     #breckets check
     brackets = re.findall(r'[\(\)]', line)
     brackets_stack = []
@@ -29,45 +21,64 @@ def checking_rule(line):
         if b == '(':
             brackets_stack.append('(')
         elif len(brackets_stack) == 0:
-            exit("non correct brackets in line " + line)
+            exit("non correct brackets in line \n\t" + line)
         else:
             brackets_stack.pop()
     if len(brackets_stack) != 0:
-        exit("non correct brackets in line " + line)
-    print(re.findall(r'[A-Z]', line))
-    print(set(re.findall(r'[A-Z]', line)))
+        exit("non correct brackets in line \n\t" + line)
     return line, set(re.findall(r'[A-Z]', line))
 
+def get_facts(line):
+    if line[0] != '=':
+        return set()
+    if len(re.findall(r'[^A-Z]', line[1:])) != 0:
+        exit("non correct facts in line \n\t" + line)
+    return (set(line[1:]))
 
-    #check unar_operation 
+def get_queries(line):
+    if line[0] != '?' or len(line) == 1:
+        exit("bad line \n\t" + line)
+    if len(re.findall(r'[^A-Z]', line[1:])) != 0:
+        exit("non correct queries in line \n\t" + line)
+    return (set(line[1:]))
 
-    #check this is formula
-#def checking_fucts(line):
-#def checking_queries(line):
 
 def get_data(fd):
-    #queries 
-    #facts 
     rules = []
     events = set()
-
+    queries = set()
+    facts = set()
+    
     while True:
         try:
             line = fd.readline()
         except Exception as e:
-            print("somthing")
+            exit(e)
         if line == '':
             fd.close()
             break
         line = re.split(r'\s*#|\s*\n', line)[0]
         line = re.sub(r'\s*', '', line)
-        print(line)
         if len(re.findall(r'[^A-Z=<>\?\(\)\+|!^]', line)) != 0:
-            sys.exit("non correct symbol in line "+ line)
+            sys.exit("non correct symbol in line \n\t"+ line)
         if line != '':
-            [rule, new_events] = checking_rule(line)
-            rules.append(rule)
-            events.union(new_events)
-    return rules, events
-        
+            [rule, new_events] = get_rule(line)
+            if rule == None:
+                new_facts = get_facts(line)
+                facts = facts.union(get_facts(line))
+                if new_facts == set():
+                    queries = queries.union(get_queries(line))
+            else:
+                rules.append(rule)
+                events = events.union(new_events)
+    data = {
+        "rules": rules, 
+        "events": events,
+        "queries": queries,
+        "facts": facts
+    }
+    for d in data:
+        if len(data[d]) == 0:
+            exit("There is no information about " + d)
+    return data
 #    sys.exit(e)

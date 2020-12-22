@@ -21,12 +21,15 @@ if (args.file_name != None):
     try:
         fd = open(args.file_name)
     except IOError as e:
-        sys.exit(e)
+        exit(e)
 else:
     fd = sys.stdin
 
 data = pr.get_data(fd)
 print (data)
+
+#check trivial cases 
+
 
 fd.close()
 
