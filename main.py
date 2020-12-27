@@ -1,9 +1,10 @@
 #bonuses 1) input format
 
 import argparse
-import parser as pr
+import mparser as pars
 import sys
 import reverse_polish_notation as rev_pn
+import cnf
 
 
 arg_pr = argparse.ArgumentParser(description=' ', add_help=True, conflict_handler='resolve')
@@ -24,7 +25,8 @@ if (args.file_name != None):
 else:
     fd = sys.stdin
 
-data = pr.get_data(fd)
+data = pars.get_data(fd)
+fd.close()
 print (data)
 rpn_rules = []
 for rule in data["rules"]:
@@ -33,6 +35,6 @@ for rule in data["rules"]:
     rpn_rules.append(rpn_rule)
 data["rpn_rules"] = rpn_rules
 print(data)
-fd.close()
-
-
+full_cnf, events_list = cnf.build_cnf(data)
+result = cnf.check_queries(data, full_cnf, events_list)
+print(result)
