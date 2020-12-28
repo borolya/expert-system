@@ -33,6 +33,7 @@ def get_facts(line):
         return None
     if len(re.findall(r'[^A-Z]', line[1:])) != 0:
         exit("non correct facts in line \n\t" + line)
+    print("FACTS:" + line[1:])
     return (set(line[1:]))
 
 def get_queries(line):
@@ -68,16 +69,20 @@ def get_data(fd):
                 if new_facts == None:
                     queries = queries.union(get_queries(line))
                 else:
-                    new_facts = get_facts(line)
+                    facts = facts.union(new_facts)
             else:
                 rules.append(rule)
                 events = events.union(new_events)
+	
+    events = events.union(facts).union(queries)
+
     data = {
         "rules": rules, 
         "events": events,
         "queries": queries,
         "facts": facts
     }
+
     if len(data["queries"]) == 0:
         exit("there are no queries")
     #for d in data:
