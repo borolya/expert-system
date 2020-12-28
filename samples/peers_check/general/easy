@@ -1,0 +1,7 @@
+A => N | F
+F | N => B
+T => R + A
+
+=T
+
+?ABNFTR #!
