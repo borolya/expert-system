@@ -47,6 +47,7 @@ def build_df(facts_list):
 		tmp = str(bin(num))[2:]
 		row = '0' * (len(facts_list) - len(tmp)) + tmp
 		df.loc[num] = list(row)
+	df = df.apply(pd.to_numeric)
 	return df
 
 
@@ -62,7 +63,7 @@ def compute_value(rule, coll):
 				vars = [stack.pop()]
 				vars.append(stack.pop())
 				stack.append(oper_to_func[el](vars[1], vars[0]))
-	print(len(stack))
+	# print(len(stack))
 	return stack.pop()
 
 
@@ -92,22 +93,23 @@ def generate_full_cnf(cnf_df, facts_list, events):
 	full_cnf = pd.DataFrame(columns=events)
 	for el in events:
 		full_cnf[el] = dic[el]
+	full_cnf = full_cnf.apply(pd.to_numeric)
 	return full_cnf
 
 def process_rule(rule, events_list, data):
-	print(rule)
+	# print(rule)
 	facts_list = set(rule)
 	for operand in operands:
 		if operand in facts_list:
 			facts_list.remove(operand)
 	facts_list = list(facts_list)
-	print(facts_list)
+	# print(facts_list)
 	df = build_df(facts_list)
-	print(df)
+	# print(df)
 	cnf_df = compute_values_for_rule(rule, df, 2 ** len(facts_list))
-	print(df)
-	print(cnf_df)
-	print(data['events'])
+	# print(df)
+	# print(cnf_df)
+	# print(data['events'])
 	if len(facts_list) < len(events_list):
 		full_rule_cnf = generate_full_cnf(cnf_df, facts_list, events_list)
 	else:
@@ -119,7 +121,7 @@ def process_rule(rule, events_list, data):
 def process_fact(fact, events_list, data):
 	cnf_df = pd.DataFrame(columns=[fact])
 	cnf_df[fact] = [0]
-	print(cnf_df)
+	# print(cnf_df)
 	if 1 < len(events_list):
 		full_rule_cnf = generate_full_cnf(cnf_df, [fact], events_list)
 	else:
@@ -131,20 +133,20 @@ def process_fact(fact, events_list, data):
 def build_cnf(data):
 	events_list = list(data['events'])
 	full_cnf = pd.DataFrame(columns=events_list)
-	print("RULES PART")
+	# print("RULES PART")
 	for rule in data['rpn_rules']:
 		full_rule_cnf = process_rule(rule, events_list, data)
 		full_cnf = pd.concat([full_cnf, full_rule_cnf], ignore_index=True)
-	print("FACTS PART")
+	# print("FACTS PART")
 	for fact in data['facts']:
-		print(fact)
+		# print(fact)
 		full_fact_cnf = process_fact(fact, events_list, data)
-		print("full_rule_cnf")
-		print(full_fact_cnf)
+		# print("full_rule_cnf")
+		# print(full_fact_cnf)
 		full_cnf = pd.concat([full_cnf, full_fact_cnf], ignore_index=True)
 	full_cnf = full_cnf.apply(pd.to_numeric)
 	full_cnf.drop_duplicates(inplace=True, ignore_index=True)
-	print(full_cnf)
+	# print(full_cnf)
 	return full_cnf, events_list
 
 def check_queries(data, full_cnf, events_list):
