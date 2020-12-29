@@ -1,4 +1,5 @@
 import pandas as pd
+from itertools import product
 
 def conj(a, b):
 	if a == 1 and b == 1:
@@ -41,21 +42,22 @@ oper_to_func = {
 	"<=>": eqv
 }
 
-def build_df(facts_list):
-	df = pd.DataFrame(columns=facts_list)
-	for num in range(2 ** len(facts_list)):
-		tmp = str(bin(num))[2:]
-		row = '0' * (len(facts_list) - len(tmp)) + tmp
-		df.loc[num] = list(row)
+def build_df(vars_list, queries, facts):
+	queries_index = [vars_list.index(el) for el in queries.difference(facts)]
+	df = pd.DataFrame(columns=vars_list)
+	for row in product('01', repeat=len(vars_list)):
+		if '0' in ''.join([row[ind] for ind in queries_index]):
+			df.loc[''.join(row)] = list(row)
 	df = df.apply(pd.to_numeric)
+	df.reset_index(inplace=True)
+	print(df)
 	return df
-
 
 def compute_value(rule, coll):
 	stack = list()
 	for el in rule:
 		if el not in operands:
-			stack.append(int(coll[el]))
+			stack.append(coll[el])
 		else:
 			if (el == '!'):
 				stack.append(neg(stack.pop()))
@@ -66,95 +68,55 @@ def compute_value(rule, coll):
 	# print(len(stack))
 	return stack.pop()
 
+def compute_values_for_rule(rule, collections_list):
+	new_zero_index = set()
+	for index, row in collections_list.iterrows():
+		if compute_value(rule, row) == 0:
+			new_zero_index.add(index) 
+	return new_zero_index
 
-def compute_values_for_rule(rule, df, length):
-	res_col = list()
-	for i in range(length):
-		res_col.append(compute_value(rule, df.loc[i]))
-	df['result'] = res_col
-	cnf_df = df.loc[df['result'] == 0]
-	return cnf_df
+def process_rule(rule, collections_list, index_equal_one, index_equal_zero):
+	new_zero_index = compute_values_for_rule(rule, collections_list.loc[index_equal_one])
+	index_equal_one.difference_update(new_zero_index)
+	index_equal_zero.update(new_zero_index)
+	return
 
-def generate_full_cnf(cnf_df, facts_list, events):
-	free_vars = list()
-	for el in events:
-		if el not in facts_list:
-			free_vars.append(el)
-	free_df = build_df(free_vars)
-	dic = dict()
-	for el in events:
-		dic[el] = list()
-	for _, row in cnf_df.iterrows():
-		for _, frow in free_df.iterrows():
-			for dep_var in facts_list:
-				dic[dep_var].append(row[dep_var])
-			for free_var in free_vars:
-				dic[free_var].append(frow[free_var])
-	full_cnf = pd.DataFrame(columns=events)
-	for el in events:
-		full_cnf[el] = dic[el]
-	full_cnf = full_cnf.apply(pd.to_numeric)
-	return full_cnf
-
-def process_rule(rule, events_list, data):
-	# print(rule)
-	facts_list = set(rule)
-	for operand in operands:
-		if operand in facts_list:
-			facts_list.remove(operand)
-	facts_list = list(facts_list)
-	# print(facts_list)
-	df = build_df(facts_list)
-	# print(df)
-	cnf_df = compute_values_for_rule(rule, df, 2 ** len(facts_list))
-	# print(df)
-	# print(cnf_df)
-	# print(data['events'])
-	if len(facts_list) < len(events_list):
-		full_rule_cnf = generate_full_cnf(cnf_df, facts_list, events_list)
-	else:
-		full_rule_cnf = pd.DataFrame(columns=events_list)
-		for el in events_list:
-			full_rule_cnf[el] = cnf_df[el]
-	return full_rule_cnf
-
-def process_fact(fact, events_list, data):
-	cnf_df = pd.DataFrame(columns=[fact])
-	cnf_df[fact] = [0]
-	# print(cnf_df)
-	if 1 < len(events_list):
-		full_rule_cnf = generate_full_cnf(cnf_df, [fact], events_list)
-	else:
-		full_rule_cnf = pd.DataFrame(columns=events_list)
-		for el in events_list:
-			full_rule_cnf[el] = cnf_df[el]
-	return full_rule_cnf
+def process_fact(fact, collections_list, index_equal_one, index_equal_zero):
+	new_zero_index = set(collections_list.loc[index_equal_one].loc[collections_list[fact] == 0].index)
+	index_equal_one.difference_update(new_zero_index)
+	index_equal_zero.update(new_zero_index)
+	return
 
 def build_cnf(data):
-	events_list = list(data['events'])
-	full_cnf = pd.DataFrame(columns=events_list)
-	# print("RULES PART")
+	all_vars_list = list(data['events'])
+	collections_list = build_df(all_vars_list, data['queries'], data['facts'])
+	print('collections are built')
+	index_equal_one = set(collections_list.index)
+	index_equal_zero = set()
 	for rule in data['rpn_rules']:
-		full_rule_cnf = process_rule(rule, events_list, data)
-		full_cnf = pd.concat([full_cnf, full_rule_cnf], ignore_index=True)
-	# print("FACTS PART")
+		print(rule)
+		process_rule(rule, collections_list, index_equal_one, index_equal_zero)
 	for fact in data['facts']:
-		# print(fact)
-		full_fact_cnf = process_fact(fact, events_list, data)
-		# print("full_rule_cnf")
-		# print(full_fact_cnf)
-		full_cnf = pd.concat([full_cnf, full_fact_cnf], ignore_index=True)
-	full_cnf = full_cnf.apply(pd.to_numeric)
-	full_cnf.drop_duplicates(inplace=True, ignore_index=True)
-	# print(full_cnf)
-	return full_cnf, events_list
+		print(fact)
+		process_fact(fact, collections_list, index_equal_one, index_equal_zero)
+	print('WE ARE HERE')
+	return collections_list, index_equal_one
 
-def check_queries(data, full_cnf, events_list):
-	result = dict()
-	for var in data['queries']:
-		full_query_cnf = process_fact(var, events_list, data)
-		check_cnf = pd.concat([full_cnf, full_query_cnf], ignore_index=True)
-		check_cnf = check_cnf.apply(pd.to_numeric)
-		check_cnf.drop_duplicates(inplace=True, ignore_index=True)
-		result[var] = (len(full_cnf.index) == len(check_cnf.index))
+def analyze_problem(data):
+	collections_list, index_equal_one = build_cnf(data)
+	result = {el: True for el in data['queries']}
+	for el in data['queries']:
+		if len(collections_list.loc[index_equal_one].loc[collections_list[el] == 0]) > 0:
+			result[el] = False
+	print(result)
 	return result
+
+# def check_queries(data, full_cnf, all_vars_list):
+# 	result = dict()
+# 	for var in data['queries']:
+# 		full_query_cnf = process_fact(var, all_vars_list, data)
+# 		check_cnf = pd.concat([full_cnf, full_query_cnf], ignore_index=True)
+# 		check_cnf = check_cnf.apply(pd.to_numeric)
+# 		check_cnf.drop_duplicates(inplace=True, ignore_index=True)
+# 		result[var] = (len(full_cnf.index) == len(check_cnf.index))
+# 	return result

@@ -35,6 +35,7 @@ for rule in data["rules"]:
     rpn_rules.append(rpn_rule)
 data["rpn_rules"] = rpn_rules
 print(data)
-full_cnf, events_list = cnf.build_cnf(data)
-result = cnf.check_queries(data, full_cnf, events_list)
-print(result)
+# full_cnf, events_list = 
+cnf.analyze_problem(data)
+# result = cnf.check_queries(data, full_cnf, events_list)
+# print(result)
