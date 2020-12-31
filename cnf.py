@@ -50,7 +50,7 @@ def build_df(vars_list, queries, facts):
 			df.loc[''.join(row)] = list(row)
 	df = df.apply(pd.to_numeric)
 	df.reset_index(inplace=True)
-	print(df)
+	# print(df)
 	return df
 
 def compute_value(rule, coll):
@@ -65,7 +65,8 @@ def compute_value(rule, coll):
 				vars = [stack.pop()]
 				vars.append(stack.pop())
 				stack.append(oper_to_func[el](vars[1], vars[0]))
-	# print(len(stack))
+		# print("stack_tmp:", stack)
+	# print("stack:", stack)
 	return stack.pop()
 
 def compute_values_for_rule(rule, collections_list):
@@ -90,33 +91,32 @@ def process_fact(fact, collections_list, index_equal_one, index_equal_zero):
 def build_cnf(data):
 	all_vars_list = list(data['events'])
 	collections_list = build_df(all_vars_list, data['queries'], data['facts'])
-	print('collections are built')
+	# print('collections are built')
 	index_equal_one = set(collections_list.index)
 	index_equal_zero = set()
 	for rule in data['rpn_rules']:
-		print(rule)
+		# print(rule)
 		process_rule(rule, collections_list, index_equal_one, index_equal_zero)
 	for fact in data['facts']:
-		print(fact)
+		# print(fact)
 		process_fact(fact, collections_list, index_equal_one, index_equal_zero)
-	print('WE ARE HERE')
 	return collections_list, index_equal_one
+
+def throw_away_vars1(collections_list, index_equal_one, data):
+	vars = data['events'].difference(data['queries']).difference(data['facts'])
+	index_to_ignore = set()
+	for index, row in collections_list.loc[index_equal_one].iterrows():
+		if '1' in ''.join([str(el) for el in row[vars]]):
+			index_to_ignore.add(index)
+	return index_equal_one.difference(index_to_ignore)
 
 def analyze_problem(data):
 	collections_list, index_equal_one = build_cnf(data)
+	index_equal_one = throw_away_vars1(collections_list, index_equal_one, data)
 	result = {el: True for el in data['queries']}
 	for el in data['queries']:
 		if len(collections_list.loc[index_equal_one].loc[collections_list[el] == 0]) > 0:
 			result[el] = False
+	# print(collections_list.loc[index_equal_one].loc[collections_list[el] == 0])
 	print(result)
 	return result
-
-# def check_queries(data, full_cnf, all_vars_list):
-# 	result = dict()
-# 	for var in data['queries']:
-# 		full_query_cnf = process_fact(var, all_vars_list, data)
-# 		check_cnf = pd.concat([full_cnf, full_query_cnf], ignore_index=True)
-# 		check_cnf = check_cnf.apply(pd.to_numeric)
-# 		check_cnf.drop_duplicates(inplace=True, ignore_index=True)
-# 		result[var] = (len(full_cnf.index) == len(check_cnf.index))
-# 	return result
