@@ -33,7 +33,7 @@ def get_facts(line):
         return None
     if len(re.findall(r'[^A-Z]', line[1:])) != 0:
         exit("non correct facts in line \n\t" + line)
-    print("FACTS:" + line[1:])
+    #print("FACTS:" + line[1:])
     return (set(line[1:]))
 
 def get_queries(line):
