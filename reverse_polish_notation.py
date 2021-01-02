@@ -36,10 +36,6 @@ def rpn(rule):
             while len(operation_stack)!=0 and PRIOPIRY[symbol] <= PRIOPIRY[operation_stack[-1]]:
                 rpn_stack.append(operation_stack.pop())
             operation_stack.append(symbol)
-        print("\ni = ", i)
-        print("symbol = ", symbol)
-        print("stack_rpn", rpn_stack)
-        print("operation_stack", operation_stack)
         i += len(symbol)
     while len(operation_stack) != 0:
         rpn_stack.append(operation_stack.pop())
