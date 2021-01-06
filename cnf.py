@@ -44,9 +44,14 @@ oper_to_func = {
 
 def build_df(vars_list, queries, facts):
 	queries_index = [vars_list.index(el) for el in queries.difference(facts)]
+	facts_index = [vars_list.index(el) for el in facts]
+	# print(queries.difference(facts))
+	# print(facts)
 	df = pd.DataFrame(columns=vars_list)
 	for row in product('01', repeat=len(vars_list)):
-		if '0' in ''.join([row[ind] for ind in queries_index]):
+		if ('0' in ''.join([row[ind] for ind in queries_index]) #try to add 1 for facts
+			and '0' * len(facts) == ''.join([row[ind] for ind in facts_index])):
+			
 			df.loc[''.join(row)] = list(row)
 	df = df.apply(pd.to_numeric)
 	df.reset_index(inplace=True)
@@ -102,21 +107,22 @@ def build_cnf(data):
 		process_fact(fact, collections_list, index_equal_one, index_equal_zero)
 	return collections_list, index_equal_one
 
-def throw_away_vars1(collections_list, index_equal_one, data):
-	vars = data['events'].difference(data['queries']).difference(data['facts'])
-	index_to_ignore = set()
-	for index, row in collections_list.loc[index_equal_one].iterrows():
-		if '1' in ''.join([str(el) for el in row[vars]]):
-			index_to_ignore.add(index)
-	return index_equal_one.difference(index_to_ignore)
+# def throw_away_vars1(collections_list, index_equal_one, data):
+# 	vars = data['events'].difference(data['queries']).difference(data['facts'])
+# 	index_to_ignore = set()
+# 	for index, row in collections_list.loc[index_equal_one].iterrows():
+# 		if '1' in ''.join([str(el) for el in row[vars]]):
+# 			index_to_ignore.add(index)
+# 	return index_equal_one.difference(index_to_ignore)
 
 def analyze_problem(data):
 	collections_list, index_equal_one = build_cnf(data)
-	index_equal_one = throw_away_vars1(collections_list, index_equal_one, data)
+	print(collections_list)
+	# index_equal_one = throw_away_vars1(collections_list, index_equal_one, data)
 	result = {el: True for el in data['queries']}
 	for el in data['queries']:
 		if len(collections_list.loc[index_equal_one].loc[collections_list[el] == 0]) > 0:
 			result[el] = False
-	# print(collections_list.loc[index_equal_one].loc[collections_list[el] == 0])
+	print(collections_list.loc[index_equal_one].loc[collections_list[el] == 0])
 	print(result)
 	return result
