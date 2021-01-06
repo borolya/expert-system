@@ -152,6 +152,9 @@ def build_cnf(data):
 # 	return index_equal_one.difference(index_to_ignore)
 
 def analyzeVars(cnf, allVars, queries):
+	if len(cnf) == 2 ** len(allVars):
+		print("Contradiction! Any statement might be obtained!")
+		return None
 	resTmp = {query: [0, 0] for query in queries}
 	for coll in cnf:
 		for query in queries:
@@ -160,50 +163,66 @@ def analyzeVars(cnf, allVars, queries):
 			else:
 				resTmp[query][1] += 1
 	half = 2 ** (len(allVars) - 1)
-	result = {query: False for query in queries}
+	result = {query: 'Undefined' for query in queries}
 	# print(resTmp)
 	for query in queries:
-		if resTmp[query][0] == half and resTmp[query][1] == half:
-			print("Contradiction! Any statement might be obtained!")
-			return None
 		if resTmp[query][0] == half:
 			result[query] = True
+		if resTmp[query][1] == half:
+			result[query] = False
 	return result
 
-def addFalseVars(cnf, notCnf, freeVars, allVars):
+def addFalseVars(cnf, notCnf, vars, allVars):
+	movedColls = set()
 	for row in notCnf:
-		for var in freeVars:
-			if freeVars[var] == False and row[allVars[var]] == '1':
+		for var in vars:
+			if row[allVars[var]] == '1':
 				cnf.add(row)
+				movedColls.add(row)
 				break
+	notCnf.difference_update(movedColls)
+	return movedColls
+	
 
-# def detectFalseVars(cnf, allVars, freeVars):
-
+def recursiveAnalyzer(cnf, notCnf, allVars, result):
+	for var in result.keys():
+		if result[var] == 'Undefined':
+			movedColls = addFalseVars(cnf, notCnf, var, allVars)
+			if len(cnf) == 2 ** len(allVars):
+				cnf.difference_update(movedColls)
+				notCnf.update(movedColls)
+				return -1
+			newResult = analyzeVars(cnf, allVars, result.keys())
+			if 'Undefined' in newResult.values():
+				if recursiveAnalyzer(cnf, notCnf, allVars, newResult) == -1:
+					cnf.difference_update(movedColls)
+					notCnf.update(movedColls)
+					return -1
+			else:
+				return newResult
 
 def analyze_problem(data):
-	# print("diff", data['events'].difference(data['facts']).difference(['queries']))
+	print(data)
 	cnf, notCnf, allVars = build_cnf(data)
-	# for el in cnf:
-	# 	print(el)
-	# tmpSet = data['events'].difference(data['facts']).difference(data['queries'])
-	# print("tmpSet", tmpSet)
-	freeVars = analyzeVars(cnf, allVars, data['events'].difference(data['facts']).difference(data['queries']))
-	# print(freeVars)
-	addFalseVars(cnf, notCnf, freeVars, allVars)
-	result = analyzeVars(cnf, allVars, data['queries'])
+	result = analyzeVars(cnf, allVars, data['events'].difference(data['facts']))
+	print(result)
 	if result is None:
 		return
-	# if resQ is None:
-	# 	return
-	# result[query] = resQ
-	print(result)
-	# collections_list, index_equal_one = build_cnf(data)
-	# print(collections_list)
-	# index_equal_one = throw_away_vars1(collections_list, index_equal_one, data)
-	# result = {el: True for el in data['queries']}
-	# for el in data['queries']:
-	# 	if len(collections_list.loc[index_equal_one].loc[collections_list[el] == 0]) > 0:
-	# 		result[el] = False
-	# print(collections_list.loc[index_equal_one].loc[collections_list[el] == 0])
-	# print(result)
-	# return result
+	if 'Undefined' in result.values():
+		undefVars = set()
+		for var in result.keys():
+			if result[var] == 'Undefined':
+				undefVars.add(var)
+		undefVars.intersection_update(data['false_event_priority'])
+		movedColls = addFalseVars(cnf, notCnf, undefVars, allVars)
+		result = analyzeVars(cnf, allVars, data['events'].difference(data['facts']))
+		if 'Undefined' in result.values():
+			print("SHIT")
+			return
+		for key in result.keys():
+			if key in data['queries']:
+				print(key, 'is', result[key])
+		return
+	for key in result.keys():
+		if key in data['queries']:
+			print(key, 'is', result[key])
