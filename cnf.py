@@ -102,8 +102,9 @@ def build_cnf(data):
 	allVarsList = list(data['events'])
 	allVarsList.sort()
 	allVars = {el[1]: el[0] for el in enumerate(allVarsList)}
-	print(allVars)
+	# print(allVars)
 	cnf = set()
+	notCnf = set()
 	for row in product('01', repeat=len(allVarsList)):
 		flag = 0
 		for fact in data['facts']:
@@ -116,10 +117,13 @@ def build_cnf(data):
 		for rule in data['rpn_rules']:
 			if compute_value(rule, row, allVars) == 0:
 				cnf.add(''.join(row))
+				flag = 1
 				break
-	for el in cnf:
-		print(el)
-	return cnf, allVars
+		if flag == 0:
+			notCnf.add(''.join(row))
+	# for el in cnf:
+	# 	print(el)
+	return cnf, notCnf, allVars
 
 
 
@@ -147,7 +151,7 @@ def build_cnf(data):
 # 			index_to_ignore.add(index)
 # 	return index_equal_one.difference(index_to_ignore)
 
-def analyzeQueries(cnf, allVars, queries):
+def analyzeVars(cnf, allVars, queries):
 	resTmp = {query: [0, 0] for query in queries}
 	for coll in cnf:
 		for query in queries:
@@ -157,6 +161,7 @@ def analyzeQueries(cnf, allVars, queries):
 				resTmp[query][1] += 1
 	half = 2 ** (len(allVars) - 1)
 	result = {query: False for query in queries}
+	# print(resTmp)
 	for query in queries:
 		if resTmp[query][0] == half and resTmp[query][1] == half:
 			print("Contradiction! Any statement might be obtained!")
@@ -165,9 +170,27 @@ def analyzeQueries(cnf, allVars, queries):
 			result[query] = True
 	return result
 
+def addFalseVars(cnf, notCnf, freeVars, allVars):
+	for row in notCnf:
+		for var in freeVars:
+			if freeVars[var] == False and row[allVars[var]] == '1':
+				cnf.add(row)
+				break
+
+# def detectFalseVars(cnf, allVars, freeVars):
+
+
 def analyze_problem(data):
-	cnf, allVars = build_cnf(data)
-	result = analyzeQueries(cnf, allVars, data['queries'])
+	# print("diff", data['events'].difference(data['facts']).difference(['queries']))
+	cnf, notCnf, allVars = build_cnf(data)
+	# for el in cnf:
+	# 	print(el)
+	# tmpSet = data['events'].difference(data['facts']).difference(data['queries'])
+	# print("tmpSet", tmpSet)
+	freeVars = analyzeVars(cnf, allVars, data['events'].difference(data['facts']).difference(data['queries']))
+	# print(freeVars)
+	addFalseVars(cnf, notCnf, freeVars, allVars)
+	result = analyzeVars(cnf, allVars, data['queries'])
 	if result is None:
 		return
 	# if resQ is None:
