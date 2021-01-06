@@ -2,7 +2,7 @@ import re
 
 #double !! i dont implement
 
-PRIOPIRY = {
+PRIORITY = {
     "(": 0,
     ")": 0,
     "!": 6,
@@ -17,11 +17,20 @@ PRIOPIRY = {
 def rpn(rule):
     rpn_stack = []
     operation_stack = []
+    prior_events = None
+    non_prior_events = None
     i = 0
     while i < len(rule):
         r = re.match(r'<?=>?', rule[i:])
         if r != None:
             symbol = r.group(0)
+            if r != '<=>':
+                prior_events = re.findall(r'[A-Z]', rule[:i])
+                non_prior_events = re.findall(r'[A-Z]', rule[i:])
+                if symbol == '<=':
+                    tmp = non_prior_events
+                    non_prior_events = prior_events
+                    prior_events = tmp
         else:
             symbol = rule[i]
         if symbol.isalpha():
@@ -33,11 +42,11 @@ def rpn(rule):
                 rpn_stack.append(operation_stack.pop())
             operation_stack.pop()
         else:
-            while len(operation_stack)!=0 and PRIOPIRY[symbol] <= PRIOPIRY[operation_stack[-1]]:
+            while len(operation_stack)!=0 and PRIORITY[symbol] <= PRIORITY[operation_stack[-1]]:
                 rpn_stack.append(operation_stack.pop())
             operation_stack.append(symbol)
         i += len(symbol)
     while len(operation_stack) != 0:
-        rpn_stack.append(operation_stack.pop())
-    return rpn_stack
+        rpn_stack.append(operation_stack.pop())    
+    return rpn_stack, prior_events, non_prior_events
      

@@ -1,6 +1,8 @@
 import re
 import sys
 
+#revrite to case with one implication
+
 def get_rule(line):
     origin_binar_operation = ['+', '^', '|', '=>', '<=', '<=>']
     if line[0] == '=' or len(re.findall(r'\?', line)) != 0:
@@ -14,6 +16,8 @@ def get_rule(line):
     real_binar_operation.pop(-1)
     if not set(real_binar_operation) <= set(origin_binar_operation):
         exit("incorrect binar operation in line \n\t" + line)
+    if len(re.findall(r'=', line)) > 1:# for => or <= or <=> ? 
+        exit("too many implication operations")# for => or <= or <=> ?
     #breckets check
     brackets = re.findall(r'[\(\)]', line)
     brackets_stack = []
