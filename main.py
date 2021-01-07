@@ -1,4 +1,8 @@
-#bonuses 1) input format
+#bonuses :
+    # input format
+    # the rule without aplicaton
+    # right side of implication 
+    # add !A to facts
 
 import argparse
 import mparser as pars
@@ -8,7 +12,7 @@ import cnf
 import time
 
 def main(filename):
-    #start_time = time.time()
+    start = time.time()
     if filename == None:
         arg_pr = argparse.ArgumentParser(description=' ', add_help=True, conflict_handler='resolve')
         arg_pr.add_argument('-f', '--file', action='store', type = str, dest='file_name', help='to use file name format')
@@ -25,10 +29,11 @@ def main(filename):
     try:
         fd = open(filename)
     except IOError as e:
-            exit(e)
+        exit(e)
 
     data = pars.get_data(fd)
     fd.close()
+    
     rpn_rules = []
     left_side = set()
     right_side = set()
@@ -41,22 +46,19 @@ def main(filename):
     data["rpn_rules"] = rpn_rules
     data["left_side"] = left_side
     data["right_side"] = right_side
-    # print(data["left_side"].difference(data["right_side"])) #only left
-    # print(data["left_side"].intersection(data["right_side"])) #only left and right
-    # print(data["right_side"].difference(data["left_side"])) #only right
-
-
-    #data["first_priority"] = left_side.difference(right_side)
-    # print(data)
 
     result = cnf.analyze_problem(data)
-    # result = cnf.check_queries(data, full_cnf, events_list)
-    
-    #print({key: result[key] for key in result.keys() if key in data['queries']})
-    #print("--- %s seconds ---" % (time.time() - start_time))
-    # if result == None:
-    #     return {}
-    #return {key: result[key] for key in result.keys() if key in data['queries']}
+    for q in data["unknown_queries"]:
+        print(str(q) + " is False")
+
+    result = {key: result[key] for key in result.keys() if key in data['queries']} #then del
+    true_result = data['queries'].intersection(data["facts"]) #then del
+    for i in true_result: #then del
+        result[i] = True #then del
+    for i in data["unknown_queries"]:
+        result[i] = False #then del
+    print("second", time.time() - start)
+    return result #then del
 
 if __name__ == '__main__':
     main(None)

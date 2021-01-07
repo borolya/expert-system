@@ -16,8 +16,8 @@ def get_rule(line):
     real_binar_operation.pop(-1)
     if not set(real_binar_operation) <= set(origin_binar_operation):
         exit("incorrect binar operation in line \n\t" + line)
-    if len(re.findall(r'=', line)) > 1:# for => or <= or <=> ? 
-        exit("too many implication operations")# for => or <= or <=> ?
+    if len(re.findall(r'(?:[^<]=>)|(?:<=[^>])', line)) > 1:# for => or <= 
+        exit("too many implication operations")# for => or <=
     #breckets check
     brackets = re.findall(r'[\(\)]', line)
     brackets_stack = []
@@ -77,19 +77,19 @@ def get_data(fd):
             else:
                 rules.append(rule)
                 events = events.union(new_events)
-	
-    events = events.union(facts).union(queries)
 
+    if len(queries) == 0:
+        exit("there are no queries")
+
+    unknown_queries = queries.difference(facts.union(events))
+    queries = queries.difference(unknown_queries)
+    events = events.union(facts).union(queries)
     data = {
         "rules": rules, 
         "events": events,
         "queries": queries,
-        "facts": facts
+        "facts": facts,
+        "unknown_queries" : unknown_queries
     }
 
-    if len(data["queries"]) == 0:
-        exit("there are no queries")
-    #for d in data:
-    #    if len(data[d]) == 0:
-    #        exit("There is no information about " + d)
     return data
