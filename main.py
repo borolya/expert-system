@@ -41,13 +41,13 @@ def main(filename):
     data["rpn_rules"] = rpn_rules
     data["left_side"] = left_side
     data["right_side"] = right_side
-    print(data["left_side"].difference(data["right_side"])) #only left
-    print(data["left_side"].intersection(data["right_side"])) #only left and right
-    print(data["right_side"].difference(data["left_side"])) #only right
+    # print(data["left_side"].difference(data["right_side"])) #only left
+    # print(data["left_side"].intersection(data["right_side"])) #only left and right
+    # print(data["right_side"].difference(data["left_side"])) #only right
 
 
     #data["first_priority"] = left_side.difference(right_side)
-    print(data)
+    # print(data)
 
     result = cnf.analyze_problem(data)
     # result = cnf.check_queries(data, full_cnf, events_list)
