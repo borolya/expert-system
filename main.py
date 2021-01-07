@@ -30,27 +30,33 @@ def main(filename):
     data = pars.get_data(fd)
     fd.close()
     rpn_rules = []
-    false_prior = set()
-    non_prior = set()
+    left_side = set()
+    right_side = set()
 
     for rule in data["rules"]:
-        rpn_rule, fl_pr, non_fl_pr = rev_pn.rpn(rule)
-        #print(rpn_rule)
+        rpn_rule, l, r = rev_pn.rpn(rule)
         rpn_rules.append(rpn_rule)
-        if fl_pr != None:
-            false_prior.update(fl_pr)
-            non_prior.update(non_fl_pr)
-        #false_prior.discard(set(non_fl_pr))
+        left_side.update(l)
+        right_side.update(r)
     data["rpn_rules"] = rpn_rules
-    data["false_event_priority"] = false_prior.difference(non_prior)
-    #print(data)
-    # full_cnf, events_list = 
-    #print("START TASK")
+    data["left_side"] = left_side
+    data["right_side"] = right_side
+    print(data["left_side"].difference(data["right_side"])) #only left
+    print(data["left_side"].intersection(data["right_side"])) #only left and right
+    print(data["right_side"].difference(data["left_side"])) #only right
+
+
+    #data["first_priority"] = left_side.difference(right_side)
+    print(data)
+
     result = cnf.analyze_problem(data)
     # result = cnf.check_queries(data, full_cnf, events_list)
-    # print(result)
+    
+    #print({key: result[key] for key in result.keys() if key in data['queries']})
     #print("--- %s seconds ---" % (time.time() - start_time))
-    return result
+    # if result == None:
+    #     return {}
+    #return {key: result[key] for key in result.keys() if key in data['queries']}
 
 if __name__ == '__main__':
     main(None)

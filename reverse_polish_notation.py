@@ -17,16 +17,16 @@ PRIORITY = {
 def rpn(rule):
     rpn_stack = []
     operation_stack = []
-    prior_events = None
-    non_prior_events = None
+    prior_events = set()
+    non_prior_events = set()
     i = 0
     while i < len(rule):
         r = re.match(r'<?=>?', rule[i:])
         if r != None:
             symbol = r.group(0)
-            if r != '<=>':
-                prior_events = re.findall(r'[A-Z]', rule[:i])
-                non_prior_events = re.findall(r'[A-Z]', rule[i:])
+            if symbol != '<=>':
+                prior_events = set(re.findall(r'[A-Z]', rule[:i]))
+                non_prior_events = set(re.findall(r'[A-Z]', rule[i:]))
                 if symbol == '<=':
                     tmp = non_prior_events
                     non_prior_events = prior_events
@@ -47,6 +47,8 @@ def rpn(rule):
             operation_stack.append(symbol)
         i += len(symbol)
     while len(operation_stack) != 0:
-        rpn_stack.append(operation_stack.pop())    
+        rpn_stack.append(operation_stack.pop())
+    if prior_events == set():
+        non_prior_events = set(re.findall(r'[A-Z]', rule))
     return rpn_stack, prior_events, non_prior_events
      
